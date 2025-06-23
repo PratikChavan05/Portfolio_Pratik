@@ -1378,7 +1378,7 @@ const ContactSection = () => (
 
       <div className="max-w-4xl mx-auto mt-10 px-4 sm:px-6 lg:px-8 text-center">
   <h4 className="text-4xl md:text-5xl font-bold mb-4 text-white tracking-tight">
-    We Value Your <span className="text-cyan-400">Feedback</span>
+    I’d Love Your <span className="text-cyan-400">Feedback</span>
   </h4>
   <p className="text-gray-400 text-base md:text-lg mb-10">
     Let us know your thoughts, suggestions, or questions. We're always eager to improve!
