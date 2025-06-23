@@ -313,14 +313,13 @@ const HeroSection = () => {
                 </h1>
 
                 {/* Typewriter Effect */}
-                <div className="mt-4 font-medium hidden md:block text-2xl md:text-4xl text-left min-h-[3rem]">
-                  <TypewriterEffect texts={typewriterTexts} />
-                </div>
+                <div className="mt-4 font-semibold text-orange-400 text-xl sm:text-2xl md:text-4xl text-left min-h-[3rem]">
+  <TypewriterEffect texts={typewriterTexts} />
+</div>
+
 
                 {/* Mobile Typewriter (Static) */}
-                <div className="mt-4 font-medium block md:hidden text-orange-500 text-xl text-left">
-                  Web Developer
-                </div>
+                
 
                 <p className="mt-6 font-normal text-gray-300 text-lg md:text-xl text-left leading-relaxed"></p>
 
