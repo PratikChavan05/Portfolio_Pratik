@@ -686,7 +686,7 @@ const Education = () => {
     },
     {
       date: "2021 - 2023",
-      title: "Dr. D.Y. Patil Junior College, Pune",
+      title: "Dr. D.Y. Patil Junior College, Kolhapur",
       subtitle: "12th Standard",
       grade: "Percentage: 86.50%",
       icon: "🎓",
