@@ -210,7 +210,7 @@ const TypewriterEffect = ({
   ]);
 
   return (
-    <span className="text-orange-500">
+    <span className="text-cyan-500 font-semibold text-xl sm:text-2xl md:text-4xl">
       {currentText}
       <span className="animate-pulse">|</span>
     </span>
@@ -313,7 +313,7 @@ const HeroSection = () => {
                 </h1>
 
                 {/* Typewriter Effect */}
-                <div className="mt-4 font-semibold text-orange-400 text-xl sm:text-2xl md:text-4xl text-left min-h-[3rem]">
+                <div className="mt-4 font-semibold text-cyan-400 text-xl sm:text-2xl md:text-4xl text-left min-h-[3rem]">
   <TypewriterEffect texts={typewriterTexts} />
 </div>
 
@@ -327,7 +327,7 @@ const HeroSection = () => {
                 <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 mt-8">
                   <button
                     onClick={handleResumeClick}
-                    className="w-full lg:w-auto font-semibold bg-transparent transition duration-500 ease-in-out hover:bg-orange-500 text-orange-500 hover:text-white py-4 px-8 border-2 border-orange-500 hover:border-transparent rounded-lg hover:scale-105 transform flex items-center justify-center gap-2"
+                    className="w-full lg:w-auto font-semibold bg-transparent transition duration-500 ease-in-out hover:bg-cyan-400 text-cyan-400 hover:text-white py-4 px-8 border-2 border-cyan-400 hover:border-transparent rounded-lg hover:scale-105 transform flex items-center justify-center gap-2"
                   >
                     <Download className="w-5 h-5" />
                     See my Resume
@@ -353,7 +353,7 @@ const HeroSection = () => {
                       <img
                         src={profileImage}
                         className="w-72 h-72 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem] rounded-full object-cover shadow-2xl border-4 border-gray-900"
-                        alt="Atharva Pardeshi"
+                        alt="Pratik Chavan"
                       />
 
                       {/* Floating Elements */}
@@ -1381,7 +1381,7 @@ const ContactSection = () => (
     I’d Love Your <span className="text-cyan-400">Feedback</span>
   </h4>
   <p className="text-gray-400 text-base md:text-lg mb-10">
-    Let us know your thoughts, suggestions, or questions. We're always eager to improve!
+    Let us know your thoughts, suggestions, or questions.
   </p>
   <div className="animate-fadeInUp">
     <ContactForm />
