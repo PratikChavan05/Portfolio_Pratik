@@ -332,13 +332,7 @@ const HeroSection = () => {
                     <Download className="w-5 h-5" />
                     See my Resume
                   </button>
-                  {/* <button
-                    onClick={() => handleNavClick("CONTACT")}
-                    className="w-full lg:w-auto font-semibold bg-transparent transition duration-500 ease-in-out hover:bg-cyan-400 text-cyan-400 hover:text-gray-900 py-4 px-8 border-2 border-cyan-400 hover:border-transparent rounded-lg hover:scale-105 transform flex items-center justify-center gap-2"
-                  >
-                    <ArrowRight className="w-5 h-5" />
-                    Reach out
-                  </button> */}
+                  
                 </div>
               </div>
             </FadeInAnimation>
