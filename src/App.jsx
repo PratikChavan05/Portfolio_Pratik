@@ -1375,7 +1375,7 @@ const ContactSection = () => (
     I’d Love Your <span className="text-cyan-400">Feedback</span>
   </h4>
   <p className="text-gray-400 text-base md:text-lg mb-10">
-    Let us know your thoughts, suggestions, or questions.
+    Let me know your thoughts, suggestions, or questions.
   </p>
   <div className="animate-fadeInUp">
     <ContactForm />
@@ -1393,7 +1393,7 @@ const Footer = () => (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center">
         <p className="text-gray-400">
-          © 2025 Made with 🧡 by Pratik Chavan.
+          © 2025 Made with 🩵 by Pratik Chavan.
         </p>
       </div>
     </div>
