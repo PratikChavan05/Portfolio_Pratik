@@ -274,7 +274,7 @@ const HeroSection = () => {
 
  const handleResumeClick = () => {
   // Replace this with your actual portfolio link
-  const portfolioUrl = "https://drive.google.com/file/d/1VbPVSKrCL9GLbibpBkLQpZDWXWca6T64/view?usp=drive_link";
+  const portfolioUrl = "https://drive.google.com/file/d/1H2hoAYN9Fm9f7tGFwwFuwp18lvz7Dh7b/view?usp=sharing";
   window.open(portfolioUrl, "_blank"); // Opens in new tab
 };
 
