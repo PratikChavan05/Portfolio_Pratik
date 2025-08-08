@@ -675,7 +675,7 @@ const Education = () => {
       date: "2023 - 2027",
       title: "Pune Institute of Computer Technology, Pune",
       subtitle: "B.E. - Computer Engineering",
-      grade: "CGPA: 9.89/10",
+      grade: "CGPA: 9.715/10",
       icon: "🎓",
     },
     {
