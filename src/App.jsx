@@ -776,7 +776,7 @@ const Experience = () => {
   const experienceData = [
     {
       date: "July 2025 - Present",
-      title: "Freelance Developer",
+      title: "Developer Intern",
       company: "Tenancy Passport (Remote)",
       duties: [
         "Developed front-end modules using React.js and TypeScript.",
