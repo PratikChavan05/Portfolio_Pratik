@@ -1,0 +1,24 @@
+User-agent: *
+Allow: /
+Disallow: /static/
+Disallow: *.json
+
+Sitemap: https://pratikchavan.dev/sitemap.xml
+
+# Google
+User-agent: Googlebot
+Allow: /
+
+# Bing
+User-agent: Bingbot
+Allow: /
+
+# Block common bot attacks
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
