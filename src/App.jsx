@@ -88,57 +88,104 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("home");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pwaSupported, setPwaSupported] = useState(false);
 
-  // Register Service Worker with better debugging
+  // Enhanced PWA Support Detection
   useEffect(() => {
-    console.log('App mounted, checking for service worker support');
-    console.log('Current URL:', window.location.href);
-    console.log('Is HTTPS:', window.location.protocol === 'https:');
-    console.log('Is localhost:', window.location.hostname === 'localhost');
-    
-    if ('serviceWorker' in navigator) {
-      console.log('Service Worker supported');
+    const checkPWASupport = async () => {
+      const hasServiceWorker = 'serviceWorker' in navigator;
+      const hasManifest = document.querySelector('link[rel="manifest"]');
+      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
       
-      window.addEventListener('load', () => {
-        console.log('Window loaded, registering service worker');
-        
-        navigator.serviceWorker.register('/sw.js')
-          .then((registration) => {
-            console.log('SW registered successfully:', registration);
-            console.log('SW scope:', registration.scope);
-            
-            // Force update check
-            registration.update();
-            
-            // Check for updates immediately
-            registration.addEventListener('updatefound', () => {
-              console.log('New service worker found');
-              const newWorker = registration.installing;
-              if (newWorker) {
-                newWorker.addEventListener('statechange', () => {
-                  console.log('New worker state:', newWorker.state);
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('New content is available; please refresh.');
-                  }
-                });
-              }
-            });
-
-            // Listen for controlling service worker changes
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-              console.log('Service worker controller changed');
-              window.location.reload();
-            });
-
-          })
-          .catch((registrationError) => {
-            console.error('SW registration failed:', registrationError);
-            console.error('Make sure you are serving over HTTPS or localhost');
-          });
+      // Check if manifest is actually accessible
+      let manifestAccessible = false;
+      if (hasManifest) {
+        try {
+          const response = await fetch('/manifest.json');
+          manifestAccessible = response.ok;
+        } catch (error) {
+          console.log('Manifest not accessible:', error);
+          manifestAccessible = false;
+        }
+      }
+      
+      const supported = hasServiceWorker && manifestAccessible && isSecure;
+      setPwaSupported(supported);
+      
+      console.log('PWA Support Check:', {
+        hasServiceWorker,
+        hasManifestLink: !!hasManifest,
+        manifestAccessible,
+        isSecure,
+        protocol: window.location.protocol,
+        hostname: window.location.hostname,
+        supported
       });
-    } else {
-      console.log('Service Worker not supported');
+      
+      // If manifest is missing, let's still try to enable PWA features
+      if (hasServiceWorker && isSecure) {
+        console.log('Basic PWA requirements met, enabling PWA features');
+        setPwaSupported(true);
+      }
+    };
+
+    checkPWASupport();
+  }, []);
+
+  // Register Service Worker with better error handling
+  useEffect(() => {
+    console.log('Checking PWA support...', { pwaSupported });
+    
+    // Always try to register service worker if basic requirements are met
+    const hasServiceWorker = 'serviceWorker' in navigator;
+    const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+    
+    if (!hasServiceWorker) {
+      console.log('Service Worker not supported in this browser');
+      return;
     }
+    
+    if (!isSecure) {
+      console.log('PWA requires HTTPS or localhost. Current protocol:', window.location.protocol);
+      return;
+    }
+
+    console.log('Registering service worker...');
+    
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then((registration) => {
+          console.log('SW registered successfully:', registration);
+          console.log('SW scope:', registration.scope);
+          setPwaSupported(true);
+          
+          registration.update();
+          
+          registration.addEventListener('updatefound', () => {
+            console.log('New service worker found');
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                console.log('New worker state:', newWorker.state);
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('New content is available; please refresh.');
+                }
+              });
+            }
+          });
+
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            console.log('Service worker controller changed');
+            window.location.reload();
+          });
+
+        })
+        .catch((registrationError) => {
+          console.error('SW registration failed:', registrationError);
+          // Don't disable PWA features just because SW registration failed
+          // setPwaSupported(false);
+        });
+    });
   }, []);
 
   // Online/Offline Detection
@@ -255,18 +302,19 @@ const App = () => {
       <Footer />
       <ScrollToTop />
 
-      {/* PWA Components - Make sure these are rendered */}
+      {/* Show PWA components regardless of full PWA support */}
       <PWAInstallPrompt />
       <PWAUpdatePrompt />
 
-      {/* Enhanced Debug info for PWA troubleshooting */}
+      {/* Enhanced Debug info - show in all environments for troubleshooting */}
       {/* <div className="fixed top-0 right-0 bg-black/90 text-white p-2 text-xs z-50 m-2 rounded max-w-xs">
         <div>Online: {isOnline ? '✅' : '❌'}</div>
         <div>SW: {('serviceWorker' in navigator) ? '✅' : '❌'}</div>
         <div>HTTPS: {(window.location.protocol === 'https:' || window.location.hostname === 'localhost') ? '✅' : '❌'}</div>
+        <div>PWA: {pwaSupported ? '✅' : '❌'}</div>
         <div>Manifest: <span id="manifest-check">❓</span></div>
         <div className="mt-1 text-xs text-gray-400">
-          {window.location.hostname}
+          {window.location.protocol}//{window.location.hostname}
         </div>
       </div> */}
 
@@ -274,9 +322,12 @@ const App = () => {
       <script dangerouslySetInnerHTML={{
         __html: `
           fetch('/manifest.json')
-            .then(response => response.json())
+            .then(response => {
+              console.log('Manifest response:', response.status, response.statusText);
+              return response.json();
+            })
             .then(manifest => {
-              console.log('Manifest loaded:', manifest);
+              console.log('Manifest loaded successfully:', manifest);
               const manifestCheck = document.getElementById('manifest-check');
               if (manifestCheck) manifestCheck.textContent = '✅';
             })

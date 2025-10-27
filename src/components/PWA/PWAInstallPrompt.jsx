@@ -27,8 +27,10 @@ const PWAInstallPrompt = () => {
       return;
     }
 
-    // Check if user previously dismissed
+    // Check if user previously dismissed or installation not supported
     const dismissed = localStorage.getItem('pwa-install-dismissed');
+    const notSupported = localStorage.getItem('pwa-install-not-supported');
+    
     if (dismissed) {
       const dismissedTime = parseInt(dismissed);
       const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
@@ -38,9 +40,18 @@ const PWAInstallPrompt = () => {
       }
     }
 
+    if (notSupported) {
+      const notSupportedTime = parseInt(notSupported);
+      const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+      if (notSupportedTime > oneDayAgo) {
+        console.log('Installation not supported on this browser, not showing prompt');
+        return;
+      }
+    }
+
     // Handle beforeinstallprompt for Android/Chrome
     const handler = (e) => {
-      console.log('beforeinstallprompt event fired');
+      console.log('beforeinstallprompt event fired - installation supported!');
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallPrompt(true);
@@ -48,28 +59,28 @@ const PWAInstallPrompt = () => {
 
     window.addEventListener('beforeinstallprompt', handler);
 
-    // For iOS devices, show manual install instructions after shorter delay for testing
+    // Only show iOS prompt if it's actually iOS and in Safari
     if (iOS && !standalone) {
-      console.log('iOS detected, setting timer for install prompt');
-      const timer = setTimeout(() => {
-        console.log('Showing iOS install prompt');
-        setShowInstallPrompt(true);
-      }, 3000); // Reduced to 3 seconds for testing
+      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+      if (isSafari) {
+        console.log('iOS Safari detected, showing manual install instructions');
+        const timer = setTimeout(() => {
+          setShowInstallPrompt(true);
+        }, 5000); // Show after 5 seconds on iOS Safari only
 
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('beforeinstallprompt', handler);
-      };
+        return () => {
+          clearTimeout(timer);
+          window.removeEventListener('beforeinstallprompt', handler);
+        };
+      } else {
+        console.log('iOS but not Safari, not showing install prompt');
+      }
     }
 
-    // For testing on desktop/Android - show after delay
-    const timer = setTimeout(() => {
-      console.log('Showing install prompt after timeout');
-      setShowInstallPrompt(true);
-    }, 5000);
-
+    // For desktop browsers, wait for the beforeinstallprompt event
+    // Don't force show after timeout - only show if browser supports it
+    
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handler);
     };
   }, []);
@@ -90,28 +101,25 @@ const PWAInstallPrompt = () => {
         
         if (choiceResult.outcome === 'accepted') {
           console.log('User accepted the install prompt');
-          // Store install acceptance
           localStorage.setItem('pwa-install-accepted', Date.now().toString());
         } else {
           console.log('User dismissed the install prompt');
-          // Store dismissal with longer delay
           localStorage.setItem('pwa-install-dismissed', Date.now().toString());
         }
         
-        // Clear the deferredPrompt for next time
         setDeferredPrompt(null);
         setShowInstallPrompt(false);
         
       } catch (error) {
         console.error('Error during installation:', error);
-        // Still hide the prompt even if there's an error
         setShowInstallPrompt(false);
       }
     } else {
-      console.log('No deferred prompt available, showing manual instructions');
-      // For browsers that don't support beforeinstallprompt
-      alert('To install this app:\n1. Open browser menu\n2. Look for "Add to Home Screen" or "Install App"\n3. Follow the prompts');
+      console.log('No deferred prompt available - hiding install prompt');
+      // Don't show alert, just hide the prompt since installation isn't supported
       setShowInstallPrompt(false);
+      // Store that we tried but couldn't install
+      localStorage.setItem('pwa-install-not-supported', Date.now().toString());
     }
   };
 
@@ -152,18 +160,6 @@ const PWAInstallPrompt = () => {
     // Store dismissal in localStorage to respect user choice
     localStorage.setItem('pwa-install-dismissed', Date.now().toString());
   };
-
-  // Force show for debugging (you can remove this later)
-  useEffect(() => {
-    const debugTimer = setTimeout(() => {
-      if (!isStandalone) {
-        console.log('Debug: Force showing install prompt');
-        setShowInstallPrompt(true);
-      }
-    }, 2000);
-
-    return () => clearTimeout(debugTimer);
-  }, [isStandalone]);
 
   console.log('Render state:', { showInstallPrompt, isStandalone, isIOS });
 
