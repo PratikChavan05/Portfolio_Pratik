@@ -3,7 +3,7 @@ Allow: /
 Disallow: /static/
 Disallow: *.json
 
-Sitemap: https://pratikchavan.dev/sitemap.xml
+Sitemap: https://pratikchavan.tech/sitemap.xml
 
 # Google
 User-agent: Googlebot
