@@ -6,21 +6,41 @@ const PWAInstallPrompt = () => {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
 
   useEffect(() => {
+    console.log('PWA Install Prompt - Component mounted');
+    
     // Check if device is iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(iOS);
+    console.log('Is iOS:', iOS);
 
     // Check if already installed (standalone mode)
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     setIsStandalone(standalone);
+    console.log('Is standalone:', standalone);
 
     // Don't show prompt if already installed
-    if (standalone) return;
+    if (standalone) {
+      console.log('App already installed, not showing prompt');
+      return;
+    }
+
+    // Check if user previously dismissed
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (dismissed) {
+      const dismissedTime = parseInt(dismissed);
+      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      if (dismissedTime > sevenDaysAgo) {
+        console.log('User dismissed recently, not showing prompt');
+        return;
+      }
+    }
 
     // Handle beforeinstallprompt for Android/Chrome
     const handler = (e) => {
+      console.log('beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e);
       setShowInstallPrompt(true);
@@ -28,11 +48,13 @@ const PWAInstallPrompt = () => {
 
     window.addEventListener('beforeinstallprompt', handler);
 
-    // For iOS devices, show manual install instructions after delay
+    // For iOS devices, show manual install instructions after shorter delay for testing
     if (iOS && !standalone) {
+      console.log('iOS detected, setting timer for install prompt');
       const timer = setTimeout(() => {
+        console.log('Showing iOS install prompt');
         setShowInstallPrompt(true);
-      }, 10000); // Show after 10 seconds on iOS
+      }, 3000); // Reduced to 3 seconds for testing
 
       return () => {
         clearTimeout(timer);
@@ -40,7 +62,16 @@ const PWAInstallPrompt = () => {
       };
     }
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    // For testing on desktop/Android - show after delay
+    const timer = setTimeout(() => {
+      console.log('Showing install prompt after timeout');
+      setShowInstallPrompt(true);
+    }, 5000);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
   }, []);
 
   const handleInstall = async () => {
@@ -59,20 +90,24 @@ const PWAInstallPrompt = () => {
     localStorage.setItem('pwa-install-dismissed', Date.now().toString());
   };
 
-  // Check if user previously dismissed (don't show again for 7 days)
+  // Force show for debugging (you can remove this later)
   useEffect(() => {
-    const dismissed = localStorage.getItem('pwa-install-dismissed');
-    if (dismissed) {
-      const dismissedTime = parseInt(dismissed);
-      const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-      if (dismissedTime > sevenDaysAgo) {
-        setShowInstallPrompt(false);
-        return;
+    const debugTimer = setTimeout(() => {
+      if (!isStandalone) {
+        console.log('Debug: Force showing install prompt');
+        setShowInstallPrompt(true);
       }
-    }
-  }, []);
+    }, 2000);
 
-  if (!showInstallPrompt || isStandalone) return null;
+    return () => clearTimeout(debugTimer);
+  }, [isStandalone]);
+
+  console.log('Render state:', { showInstallPrompt, isStandalone, isIOS });
+
+  if (!showInstallPrompt || isStandalone) {
+    console.log('Not showing prompt:', { showInstallPrompt, isStandalone });
+    return null;
+  }
 
   // iOS Install Instructions
   if (isIOS) {

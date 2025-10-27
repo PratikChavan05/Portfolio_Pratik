@@ -89,21 +89,28 @@ const App = () => {
   const [activeSection, setActiveSection] = useState("home");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Register Service Worker
+  // Register Service Worker with better debugging
   useEffect(() => {
+    console.log('App mounted, checking for service worker support');
+    
     if ('serviceWorker' in navigator) {
+      console.log('Service Worker supported');
+      
       window.addEventListener('load', () => {
+        console.log('Window loaded, registering service worker');
+        
         navigator.serviceWorker.register('/sw.js')
           .then((registration) => {
-            console.log('SW registered: ', registration);
+            console.log('SW registered successfully:', registration);
             
-            // Check for updates
+            // Check for updates immediately
             registration.addEventListener('updatefound', () => {
+              console.log('New service worker found');
               const newWorker = registration.installing;
               if (newWorker) {
                 newWorker.addEventListener('statechange', () => {
+                  console.log('New worker state:', newWorker.state);
                   if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    // New content is available
                     console.log('New content is available; please refresh.');
                   }
                 });
@@ -111,9 +118,11 @@ const App = () => {
             });
           })
           .catch((registrationError) => {
-            console.log('SW registration failed: ', registrationError);
+            console.error('SW registration failed:', registrationError);
           });
       });
+    } else {
+      console.log('Service Worker not supported');
     }
   }, []);
 
@@ -231,9 +240,15 @@ const App = () => {
       <Footer />
       <ScrollToTop />
 
-      {/* PWA Components */}
+      {/* PWA Components - Make sure these are rendered */}
       <PWAInstallPrompt />
       <PWAUpdatePrompt />
+
+      {/* Debug info (remove in production)
+      <div className="fixed top-0 right-0 bg-black/80 text-white p-2 text-xs z-50 m-2 rounded">
+        <div>Online: {isOnline ? '✅' : '❌'}</div>
+        <div>SW: {('serviceWorker' in navigator) ? '✅' : '❌'}</div>
+      </div> */}
 
       {/* Global Enhanced Styles */}
       <style jsx global>{`
