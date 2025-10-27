@@ -92,6 +92,9 @@ const App = () => {
   // Register Service Worker with better debugging
   useEffect(() => {
     console.log('App mounted, checking for service worker support');
+    console.log('Current URL:', window.location.href);
+    console.log('Is HTTPS:', window.location.protocol === 'https:');
+    console.log('Is localhost:', window.location.hostname === 'localhost');
     
     if ('serviceWorker' in navigator) {
       console.log('Service Worker supported');
@@ -102,6 +105,10 @@ const App = () => {
         navigator.serviceWorker.register('/sw.js')
           .then((registration) => {
             console.log('SW registered successfully:', registration);
+            console.log('SW scope:', registration.scope);
+            
+            // Force update check
+            registration.update();
             
             // Check for updates immediately
             registration.addEventListener('updatefound', () => {
@@ -116,9 +123,17 @@ const App = () => {
                 });
               }
             });
+
+            // Listen for controlling service worker changes
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              console.log('Service worker controller changed');
+              window.location.reload();
+            });
+
           })
           .catch((registrationError) => {
             console.error('SW registration failed:', registrationError);
+            console.error('Make sure you are serving over HTTPS or localhost');
           });
       });
     } else {
@@ -243,6 +258,35 @@ const App = () => {
       {/* PWA Components - Make sure these are rendered */}
       <PWAInstallPrompt />
       <PWAUpdatePrompt />
+
+      {/* Enhanced Debug info for PWA troubleshooting */}
+      {/* <div className="fixed top-0 right-0 bg-black/90 text-white p-2 text-xs z-50 m-2 rounded max-w-xs">
+        <div>Online: {isOnline ? '✅' : '❌'}</div>
+        <div>SW: {('serviceWorker' in navigator) ? '✅' : '❌'}</div>
+        <div>HTTPS: {(window.location.protocol === 'https:' || window.location.hostname === 'localhost') ? '✅' : '❌'}</div>
+        <div>Manifest: <span id="manifest-check">❓</span></div>
+        <div className="mt-1 text-xs text-gray-400">
+          {window.location.hostname}
+        </div>
+      </div> */}
+
+      {/* Manifest validation script */}
+      <script dangerouslySetInnerHTML={{
+        __html: `
+          fetch('/manifest.json')
+            .then(response => response.json())
+            .then(manifest => {
+              console.log('Manifest loaded:', manifest);
+              const manifestCheck = document.getElementById('manifest-check');
+              if (manifestCheck) manifestCheck.textContent = '✅';
+            })
+            .catch(error => {
+              console.error('Manifest load failed:', error);
+              const manifestCheck = document.getElementById('manifest-check');
+              if (manifestCheck) manifestCheck.textContent = '❌';
+            });
+        `
+      }} />
 
       {/* Debug info (remove in production)
       <div className="fixed top-0 right-0 bg-black/80 text-white p-2 text-xs z-50 m-2 rounded">

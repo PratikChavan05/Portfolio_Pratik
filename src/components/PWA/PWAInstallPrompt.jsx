@@ -75,14 +75,77 @@ const PWAInstallPrompt = () => {
   }, []);
 
   const handleInstall = async () => {
+    console.log('Install button clicked');
+    console.log('Deferred prompt available:', !!deferredPrompt);
+    
     if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User response to the install prompt: ${outcome}`);
-      setDeferredPrompt(null);
+      try {
+        // Show the install prompt
+        const promptResult = await deferredPrompt.prompt();
+        console.log('Prompt result:', promptResult);
+        
+        // Wait for the user to respond to the prompt
+        const choiceResult = await deferredPrompt.userChoice;
+        console.log('User choice:', choiceResult);
+        
+        if (choiceResult.outcome === 'accepted') {
+          console.log('User accepted the install prompt');
+          // Store install acceptance
+          localStorage.setItem('pwa-install-accepted', Date.now().toString());
+        } else {
+          console.log('User dismissed the install prompt');
+          // Store dismissal with longer delay
+          localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+        }
+        
+        // Clear the deferredPrompt for next time
+        setDeferredPrompt(null);
+        setShowInstallPrompt(false);
+        
+      } catch (error) {
+        console.error('Error during installation:', error);
+        // Still hide the prompt even if there's an error
+        setShowInstallPrompt(false);
+      }
+    } else {
+      console.log('No deferred prompt available, showing manual instructions');
+      // For browsers that don't support beforeinstallprompt
+      alert('To install this app:\n1. Open browser menu\n2. Look for "Add to Home Screen" or "Install App"\n3. Follow the prompts');
       setShowInstallPrompt(false);
     }
   };
+
+  // Enhanced detection for installation
+  useEffect(() => {
+    // Listen for app installed event
+    window.addEventListener('appinstalled', (event) => {
+      console.log('App was installed successfully', event);
+      setShowInstallPrompt(false);
+      setIsStandalone(true);
+      // Clear any dismissal flags since app is now installed
+      localStorage.removeItem('pwa-install-dismissed');
+      localStorage.setItem('pwa-install-accepted', Date.now().toString());
+    });
+
+    // Check if app is already installed periodically
+    const checkInstallStatus = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                          window.navigator.standalone ||
+                          document.referrer.includes('android-app://');
+      
+      if (isStandalone && !isStandalone) {
+        console.log('App detected as installed');
+        setIsStandalone(true);
+        setShowInstallPrompt(false);
+      }
+    };
+
+    const installCheckInterval = setInterval(checkInstallStatus, 2000);
+    
+    return () => {
+      clearInterval(installCheckInterval);
+    };
+  }, [isStandalone]);
 
   const handleDismiss = () => {
     setShowInstallPrompt(false);
