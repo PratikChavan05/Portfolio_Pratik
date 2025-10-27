@@ -88,117 +88,42 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("home");
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [pwaSupported, setPwaSupported] = useState(false);
 
-  // Enhanced PWA Support Detection
+  // Register Service Worker
   useEffect(() => {
-    const checkPWASupport = async () => {
-      const hasServiceWorker = 'serviceWorker' in navigator;
-      const hasManifest = document.querySelector('link[rel="manifest"]');
-      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
-      
-      // Check if manifest is actually accessible
-      let manifestAccessible = false;
-      if (hasManifest) {
-        try {
-          const response = await fetch('/manifest.json');
-          manifestAccessible = response.ok;
-        } catch (error) {
-          console.log('Manifest not accessible:', error);
-          manifestAccessible = false;
-        }
-      }
-      
-      const supported = hasServiceWorker && manifestAccessible && isSecure;
-      setPwaSupported(supported);
-      
-      console.log('PWA Support Check:', {
-        hasServiceWorker,
-        hasManifestLink: !!hasManifest,
-        manifestAccessible,
-        isSecure,
-        protocol: window.location.protocol,
-        hostname: window.location.hostname,
-        supported
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('SW registered successfully');
+            registration.update();
+            
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('New content available');
+                  }
+                });
+              }
+            });
+
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              window.location.reload();
+            });
+          })
+          .catch((error) => {
+            console.error('SW registration failed:', error);
+          });
       });
-      
-      // If manifest is missing, let's still try to enable PWA features
-      if (hasServiceWorker && isSecure) {
-        console.log('Basic PWA requirements met, enabling PWA features');
-        setPwaSupported(true);
-      }
-    };
-
-    checkPWASupport();
-  }, []);
-
-  // Register Service Worker with better error handling
-  useEffect(() => {
-    console.log('Checking PWA support...', { pwaSupported });
-    
-    // Always try to register service worker if basic requirements are met
-    const hasServiceWorker = 'serviceWorker' in navigator;
-    const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
-    
-    if (!hasServiceWorker) {
-      console.log('Service Worker not supported in this browser');
-      return;
     }
-    
-    if (!isSecure) {
-      console.log('PWA requires HTTPS or localhost. Current protocol:', window.location.protocol);
-      return;
-    }
-
-    console.log('Registering service worker...');
-    
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('SW registered successfully:', registration);
-          console.log('SW scope:', registration.scope);
-          setPwaSupported(true);
-          
-          registration.update();
-          
-          registration.addEventListener('updatefound', () => {
-            console.log('New service worker found');
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                console.log('New worker state:', newWorker.state);
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  console.log('New content is available; please refresh.');
-                }
-              });
-            }
-          });
-
-          navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('Service worker controller changed');
-            window.location.reload();
-          });
-
-        })
-        .catch((registrationError) => {
-          console.error('SW registration failed:', registrationError);
-          // Don't disable PWA features just because SW registration failed
-          // setPwaSupported(false);
-        });
-    });
   }, []);
 
   // Online/Offline Detection
   useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      console.log('App is online');
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      console.log('App is offline');
-    };
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
@@ -302,205 +227,46 @@ const App = () => {
       <Footer />
       <ScrollToTop />
 
-      {/* Show PWA components regardless of full PWA support */}
+      {/* PWA Components */}
       <PWAInstallPrompt />
       <PWAUpdatePrompt />
 
-      {/* Enhanced Debug info - show in all environments for troubleshooting */}
-      {/* <div className="fixed top-0 right-0 bg-black/90 text-white p-2 text-xs z-50 m-2 rounded max-w-xs">
-        <div>Online: {isOnline ? '✅' : '❌'}</div>
-        <div>SW: {('serviceWorker' in navigator) ? '✅' : '❌'}</div>
-        <div>HTTPS: {(window.location.protocol === 'https:' || window.location.hostname === 'localhost') ? '✅' : '❌'}</div>
-        <div>PWA: {pwaSupported ? '✅' : '❌'}</div>
-        <div>Manifest: <span id="manifest-check">❓</span></div>
-        <div className="mt-1 text-xs text-gray-400">
-          {window.location.protocol}//{window.location.hostname}
-        </div>
-      </div> */}
-
-      {/* Manifest validation script */}
-      <script dangerouslySetInnerHTML={{
-        __html: `
-          fetch('/manifest.json')
-            .then(response => {
-              console.log('Manifest response:', response.status, response.statusText);
-              return response.json();
-            })
-            .then(manifest => {
-              console.log('Manifest loaded successfully:', manifest);
-              const manifestCheck = document.getElementById('manifest-check');
-              if (manifestCheck) manifestCheck.textContent = '✅';
-            })
-            .catch(error => {
-              console.error('Manifest load failed:', error);
-              const manifestCheck = document.getElementById('manifest-check');
-              if (manifestCheck) manifestCheck.textContent = '❌';
-            });
-        `
-      }} />
-
-      {/* Debug info (remove in production)
-      <div className="fixed top-0 right-0 bg-black/80 text-white p-2 text-xs z-50 m-2 rounded">
-        <div>Online: {isOnline ? '✅' : '❌'}</div>
-        <div>SW: {('serviceWorker' in navigator) ? '✅' : '❌'}</div>
-      </div> */}
-
-      {/* Global Enhanced Styles */}
-      <style jsx global>{`
+      {/* Global Styles */}
+      <style jsx="true" global="true">{`
         @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
         }
         
-        .animate-fade-in {
-          animation: fade-in 1s ease-out;
-        }
-
-        .animate-fadeInUp {
-          animation: fade-in 0.8s ease-out;
-        }
-
-        html {
-          scroll-behavior: smooth;
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-          background: #1f2937;
-        }
-
-        ::-webkit-scrollbar-thumb {
+        .animate-fade-in { animation: fade-in 1s ease-out; }
+        .animate-fadeInUp { animation: fade-in 0.8s ease-out; }
+        
+        html { scroll-behavior: smooth; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { 
           background: linear-gradient(to bottom, #06b6d4, #3b82f6);
           border-radius: 4px;
         }
-
-        ::-webkit-scrollbar-thumb:hover {
+        ::-webkit-scrollbar-thumb:hover { 
           background: linear-gradient(to bottom, #0891b2, #2563eb);
         }
-
-        /* Selection color */
-        ::selection {
-          background-color: #06b6d4;
-          color: white;
-        }
-
-        /* Enhanced animations */
+        
+        ::selection { background-color: #06b6d4; color: white; }
+        
         @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
         }
-
-        @keyframes pulse-glow {
-          0%, 100% {
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
-          }
-          50% {
-            box-shadow: 0 0 40px rgba(6, 182, 212, 0.6);
-          }
-        }
-
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-
-        .animate-pulse-glow {
-          animation: pulse-glow 2s ease-in-out infinite;
-        }
-
-        /* Smooth page transitions */
-        .page-transition {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Enhanced focus states for accessibility */
-        button:focus,
-        a:focus,
-        input:focus,
-        textarea:focus {
+        
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        
+        button:focus, a:focus, input:focus, textarea:focus {
           outline: 2px solid #06b6d4;
           outline-offset: 2px;
         }
-
-        /* Loading states */
-        .loading-shimmer {
-          background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
-          background-size: 200% 100%;
-          animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes shimmer {
-          0% {
-            background-position: -200% 0;
-          }
-          100% {
-            background-position: 200% 0;
-          }
-        }
-
-        /* Error states */
-        .error-shake {
-          animation: shake 0.5s ease-in-out;
-        }
-
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
-        }
-
-        /* Success states */
-        .success-bounce {
-          animation: successBounce 0.6s ease-in-out;
-        }
-
-        @keyframes successBounce {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.05); }
-        }
-
-        /* Responsive text scaling */
-        @media (max-width: 640px) {
-          .text-responsive-xl {
-            font-size: 2rem;
-            line-height: 2.5rem;
-          }
-        }
-
-        @media (min-width: 641px) {
-          .text-responsive-xl {
-            font-size: 3rem;
-            line-height: 3.5rem;
-          }
-        }
-
-        @media (min-width: 1024px) {
-          .text-responsive-xl {
-            font-size: 4rem;
-            line-height: 4.5rem;
-          }
-        }
-
-        /* Enhanced hover effects */
-        .hover-glow:hover {
-          box-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
-          transform: translateY(-2px);
-        }
-
-        /* Gradient text animations */
+        
         .gradient-text-animated {
           background: linear-gradient(-45deg, #06b6d4, #3b82f6, #8b5cf6, #f97316);
           background-size: 400% 400%;
@@ -509,47 +275,18 @@ const App = () => {
           -webkit-text-fill-color: transparent;
           animation: gradient-shift 3s ease infinite;
         }
-
+        
         @keyframes gradient-shift {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-
-        /* Dark mode optimizations */
-        @media (prefers-color-scheme: dark) {
-          .auto-dark {
-            color-scheme: dark;
-          }
-        }
-
-        /* Reduced motion preferences */
+        
         @media (prefers-reduced-motion: reduce) {
-          *,
-          *::before,
-          *::after {
+          *, *::before, *::after {
             animation-duration: 0.01ms !important;
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
-          }
-        }
-
-        /* Print styles */
-        @media print {
-          .no-print {
-            display: none !important;
-          }
-          
-          .print-friendly {
-            color: black !important;
-            background: white !important;
-          }
-        }
-
-        /* High contrast mode support */
-        @media (prefers-contrast: high) {
-          .high-contrast {
-            border: 2px solid;
           }
         }
       `}</style>

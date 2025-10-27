@@ -1,7 +1,7 @@
 {
   "name": "Pratik Chavan - Portfolio",
   "short_name": "Pratik Portfolio",
-  "description": "Full Stack Developer & Tech Enthusiast Portfolio",
+  "description": "Full Stack Developer & AI/ML Enthusiast Portfolio",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#111827",
@@ -26,5 +26,7 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["portfolio", "developer", "technology"]
+  "categories": ["portfolio", "developer", "technology"],
+  "lang": "en",
+  "dir": "ltr"
 }
